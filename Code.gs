@@ -63,12 +63,12 @@ function doPost(e) {
     
     let photoUrl = "";
     
-    // ถ้าเป็นการแก้ไขและไม่มีรูปใหม่ ให้ดึงรูปเดิมมา
-    if (action === 'edit' && payload.rowIndex && (!payload.photo || !payload.photo.data)) {
+    // ถ้าเป็นการแก้ไข ให้ดึงรูปลิงก์เดิมมาก่อน
+    if (action === 'edit' && payload.rowIndex) {
        photoUrl = sheet.getRange(payload.rowIndex, 20).getValue();
     }
 
-    if (payload.photo && payload.photo.data) {
+    if (payload.photos && payload.photos.length > 0) {
       const folderName = "Clinic_Photos";
       const folders = DriveApp.getFoldersByName(folderName);
       let folder;
@@ -78,10 +78,24 @@ function doPost(e) {
         folder = DriveApp.createFolder(folderName);
       }
       
-      const blob = Utilities.newBlob(Utilities.base64Decode(payload.photo.data), payload.photo.mimeType, "Clinic_" + new Date().getTime() + ".jpg");
-      const file = folder.createFile(blob);
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      photoUrl = file.getUrl();
+      let newUrls = [];
+      for (let i = 0; i < payload.photos.length; i++) {
+        const photo = payload.photos[i];
+        if (photo && photo.data) {
+          const blob = Utilities.newBlob(Utilities.base64Decode(photo.data), photo.mimeType, "Clinic_" + new Date().getTime() + "_" + i + ".jpg");
+          const file = folder.createFile(blob);
+          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          newUrls.push(file.getUrl());
+        }
+      }
+      
+      if (newUrls.length > 0) {
+        if (photoUrl && photoUrl.toString().trim() !== "") {
+          photoUrl = photoUrl + "," + newUrls.join(",");
+        } else {
+          photoUrl = newUrls.join(",");
+        }
+      }
     }
     
     // สร้าง Array ข้อมูลสำหรับ 1 แถว (เรียงตามคอลัมน์ใน Sheet)

@@ -18,12 +18,11 @@ const toast = document.getElementById('toast');
 const btnGPS = document.getElementById('btnGPS');
 const photoInput = document.getElementById('photo');
 const photoPreviewContainer = document.getElementById('photoPreviewContainer');
-const photoPreview = document.getElementById('photoPreview');
+const btnClearPhotos = document.getElementById('btnClearPhotos');
 
 // Data State
 let clinicsData = [];
-let photoBase64 = '';
-let photoMimeType = '';
+let photosData = []; // Array to hold new photos
 
 // Initialize
 function init() {
@@ -87,12 +86,16 @@ function renderClinics(data) {
           <span>${clinic.licensee || 'ไม่ระบุผู้รับอนุญาต'}</span>
         </div>
         <div class="detail-row">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          <span>${clinic.address || ''} ${clinic.subdistrict || ''} ${clinic.district || ''}</span>
-        </div>
-        <div class="detail-row">
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
           <span>${clinic.phone || '-'}</span>
+        </div>
+        <div class="detail-row">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--secondary-color)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          <span style="${clinic.coordinates ? 'color:var(--secondary-color); font-weight:600;' : ''}">${clinic.coordinates ? clinic.coordinates : 'ยังไม่มีพิกัด'}</span>
+        </div>
+        <div class="detail-row">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--primary-color)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <span style="${clinic.photoUrl ? 'color:var(--primary-color); font-weight:600;' : ''}">${clinic.photoUrl ? `📸 มีรูปภาพ (${clinic.photoUrl.split(',').length} รูป)` : 'ยังไม่มีรูปภาพ'}</span>
         </div>
       </div>
     `;
@@ -115,10 +118,10 @@ searchInput.addEventListener('input', (e) => {
 btnShowAddForm.addEventListener('click', () => {
   clinicForm.reset();
   document.getElementById('formRowIndex').value = '';
-  photoBase64 = '';
-  photoMimeType = '';
+  photosData = [];
   photoPreviewContainer.style.display = 'none';
-  photoPreview.src = '';
+  photoPreviewContainer.innerHTML = '';
+  btnClearPhotos.style.display = 'none';
   formTitle.textContent = 'เพิ่มข้อมูลคลินิกใหม่';
   toggleView('form');
 });
@@ -159,17 +162,23 @@ function openEditForm(clinic, index) {
   document.getElementById('coordinates').value = clinic.coordinates || '';
   document.getElementById('notes').value = clinic.notes || '';
   
-  photoBase64 = '';
-  photoMimeType = '';
+  photosData = [];
   photoInput.value = '';
+  photoPreviewContainer.innerHTML = '';
+  btnClearPhotos.style.display = 'none';
   
-  // Show existing photo if any
+  // Show existing photos if any
   if (clinic.photoUrl) {
-    photoPreviewContainer.style.display = 'block';
-    photoPreview.src = clinic.photoUrl;
+    photoPreviewContainer.style.display = 'flex';
+    const urls = clinic.photoUrl.split(',').map(u => u.trim()).filter(u => u);
+    urls.forEach(url => {
+      const img = document.createElement('img');
+      img.src = url;
+      img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);';
+      photoPreviewContainer.appendChild(img);
+    });
   } else {
     photoPreviewContainer.style.display = 'none';
-    photoPreview.src = '';
   }
   
   formTitle.textContent = 'แก้ไขข้อมูลคลินิก';
@@ -209,52 +218,79 @@ function resetGPSButton() {
 
 // Photo Upload Feature (Resize to Base64)
 photoInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) {
-    photoBase64 = '';
-    photoMimeType = '';
-    photoPreviewContainer.style.display = 'none';
-    return;
-  }
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
   
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 800;
-      const MAX_HEIGHT = 800;
-      let width = img.width;
-      let height = img.height;
-      
-      if (width > height) {
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width = MAX_WIDTH;
+  btnClearPhotos.style.display = 'inline-block';
+  photoPreviewContainer.style.display = 'flex';
+  
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height) {
+          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+        } else {
+          if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
         }
-      } else {
-        if (height > MAX_HEIGHT) {
-          width *= MAX_HEIGHT / height;
-          height = MAX_HEIGHT;
-        }
-      }
-      
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-      
-      photoMimeType = 'image/jpeg';
-      photoBase64 = dataUrl.split(',')[1]; // Get only base64 data without prefix
-      
-      photoPreviewContainer.style.display = 'block';
-      photoPreview.src = dataUrl;
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const base64 = dataUrl.split(',')[1];
+        
+        photosData.push({
+          data: base64,
+          mimeType: 'image/jpeg'
+        });
+        
+        const imgEl = document.createElement('img');
+        imgEl.src = dataUrl;
+        imgEl.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);';
+        photoPreviewContainer.appendChild(imgEl);
+      };
+      img.src = event.target.result;
     };
-    img.src = event.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
+  }
+});
+
+btnClearPhotos.addEventListener('click', () => {
+  photosData = [];
+  photoInput.value = '';
+  btnClearPhotos.style.display = 'none';
+  photoPreviewContainer.innerHTML = '';
+  
+  // Re-render existing photos if editing
+  const rowIndex = document.getElementById('formRowIndex').value;
+  if (rowIndex) {
+    const clinic = clinicsData[rowIndex - 2];
+    if (clinic && clinic.photoUrl) {
+      photoPreviewContainer.style.display = 'flex';
+      const urls = clinic.photoUrl.split(',').map(u => u.trim()).filter(u => u);
+      urls.forEach(url => {
+        const img = document.createElement('img');
+        img.src = url;
+        img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);';
+        photoPreviewContainer.appendChild(img);
+      });
+    } else {
+      photoPreviewContainer.style.display = 'none';
+    }
+  } else {
+    photoPreviewContainer.style.display = 'none';
+  }
 });
 
 // Form Submission
@@ -290,10 +326,7 @@ clinicForm.addEventListener('submit', async (e) => {
       coordinates: document.getElementById('coordinates').value,
       notes: document.getElementById('notes').value
     },
-    photo: {
-      data: photoBase64,
-      mimeType: photoMimeType
-    }
+    photos: photosData
   };
 
   try {

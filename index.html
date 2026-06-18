@@ -143,10 +143,13 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="photo">รูปภาพแนบ (ถ่ายรูป / เลือกไฟล์)</label>
-          <input type="file" id="photo" class="form-input" accept="image/*" capture="environment">
-          <div id="photoPreviewContainer" style="display:none; margin-top:0.5rem; text-align:center;">
-            <img id="photoPreview" style="max-width: 100%; border-radius: 8px; max-height: 200px; object-fit: cover; border: 1px solid rgba(0,0,0,0.1);">
+          <label class="form-label" for="photo">รูปภาพแนบ (ถ่ายรูป / เลือกไฟล์หลายรูปได้)</label>
+          <input type="file" id="photo" class="form-input" accept="image/*" multiple capture="environment">
+          <div style="margin-top: 0.5rem; text-align: right;">
+            <button type="button" id="btnClearPhotos" class="btn-secondary" style="display:none; margin-left: auto; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: var(--danger-color); color: var(--danger-color);">ล้างรูปภาพใหม่ที่เลือก</button>
+          </div>
+          <div id="photoPreviewContainer" style="display:none; margin-top:0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+            <!-- Images will be injected here -->
           </div>
         </div>
 
