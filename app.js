@@ -31,6 +31,9 @@ const userProfileName = document.getElementById('userProfileName');
 const btnLogout = document.getElementById('btnLogout');
 
 // Data State
+let allData = {};
+let currentTab = '';
+let headers = [];
 let clinicsData = [];
 let photosData = []; // Array to hold new photos
 let currentUser = null;
@@ -130,60 +133,93 @@ async function fetchClinics() {
     const result = await response.json();
     
     if (result.status === 'success') {
-      clinicsData = result.data;
-      renderClinics(clinicsData);
+      allData = result.data;
+      if (!currentTab && Object.keys(allData).length > 0) {
+        currentTab = Object.keys(allData)[0];
+      }
+      renderTabs();
+      if (currentTab) switchTab(currentTab);
     } else {
       showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+      loadingState.style.display = 'none';
     }
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error('Fetch error:', error);
     showToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
-  } finally {
     loadingState.style.display = 'none';
   }
 }
 
-// Render Clinic List
-function renderClinics(data) {
+// Tab Management
+function renderTabs() {
+  const tabNav = document.getElementById('tabNav');
+  if (!tabNav) return;
+  tabNav.innerHTML = '';
+  Object.keys(allData).forEach(tab => {
+    const btn = document.createElement('button');
+    btn.className = `tab-btn ${tab === currentTab ? 'active' : ''}`;
+    btn.textContent = tab;
+    btn.onclick = () => switchTab(tab);
+    tabNav.appendChild(btn);
+  });
+}
+
+function switchTab(tabName) {
+  currentTab = tabName;
+  headers = allData[tabName].headers;
+  clinicsData = allData[tabName].rows;
+  renderTabs(); // update active state
+  renderClinics(clinicsData);
+}
+
+// Render List
+function renderClinics(dataToRender) {
+  loadingState.style.display = 'none';
   clinicList.innerHTML = '';
   
-  if (data.length === 0) {
-    clinicList.innerHTML = '<p style="text-align:center; color:var(--text-light); margin-top:2rem;">ไม่พบข้อมูลคลินิก</p>';
+  if (dataToRender.length === 0) {
+    clinicList.innerHTML = '<p style="text-align:center; color:var(--text-light); margin-top:2rem;">ไม่มีข้อมูล</p>';
     return;
   }
   
-  data.forEach((clinic, index) => {
-    // skip header or empty
-    if (!clinic.name) return;
-    
+  const titleField = headers[1] || headers[0];
+  const sub1Field = headers[2] || '';
+  const sub2Field = headers[4] || headers[3] || '';
+
+  dataToRender.forEach((clinic) => {
     const card = document.createElement('div');
     card.className = 'clinic-card';
-    card.onclick = () => openEditForm(clinic, index);
     
+    const title = clinic[titleField] || 'ไม่มีชื่อ';
+    const sub1 = sub1Field && clinic[sub1Field] ? `${sub1Field}: ${clinic[sub1Field]}` : '';
+    const sub2 = sub2Field && clinic[sub2Field] ? `${sub2Field}: ${clinic[sub2Field]}` : '';
+    
+    // Check for GPS and Photos
+    const hasGps = headers.some(h => (h==='พิกัด' || h==='coordinates' || h==='GPS') && clinic[h] && clinic[h].toString().trim() !== '');
+    const photoKey = headers.find(h => h==='รูปภาพ' || h==='photoUrl' || h==='รูปถ่าย');
+    const photoStr = photoKey ? clinic[photoKey] : '';
+    const hasPhotos = photoStr && photoStr.toString().trim() !== '';
+    let photoCount = 0;
+    if (hasPhotos) photoCount = String(photoStr).split(',').length;
+    
+    const gpsHtml = hasGps ? `<span class="status-badge status-active">📍 มีพิกัด</span>` : `<span class="status-badge" style="background:var(--bg-color);color:var(--text-light);">📍 ไม่มีพิกัด</span>`;
+    const photoHtml = hasPhotos ? `<span class="status-badge status-active">📸 รูป (${photoCount})</span>` : `<span class="status-badge" style="background:var(--bg-color);color:var(--text-light);">📸 ไม่มีรูป</span>`;
+
     card.innerHTML = `
       <div class="clinic-header">
-        <div class="clinic-name">${clinic.name}</div>
-        <div class="clinic-code">${clinic.clinicCode || '-'}</div>
+        <h3 class="clinic-title">${title}</h3>
       </div>
       <div class="clinic-details">
-        <div class="detail-row">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-          <span>${clinic.licensee || 'ไม่ระบุผู้รับอนุญาต'}</span>
-        </div>
-        <div class="detail-row">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-          <span>${clinic.phone || '-'}</span>
-        </div>
-        <div class="detail-row">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--secondary-color)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          <span style="${clinic.coordinates ? 'color:var(--secondary-color); font-weight:600;' : ''}">${clinic.coordinates ? clinic.coordinates : 'ยังไม่มีพิกัด'}</span>
-        </div>
-        <div class="detail-row">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--primary-color)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-          <span style="${clinic.photoUrl ? 'color:var(--primary-color); font-weight:600;' : ''}">${clinic.photoUrl ? `📸 มีรูปภาพ (${String(clinic.photoUrl).split(',').length} รูป)` : 'ยังไม่มีรูปภาพ'}</span>
+        ${sub1 ? `<div class="detail-item"><strong>${sub1}</strong></div>` : ''}
+        ${sub2 ? `<div class="detail-item"><strong>${sub2}</strong></div>` : ''}
+        <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+          ${gpsHtml}
+          ${photoHtml}
         </div>
       </div>
     `;
+    
+    card.addEventListener('click', () => openEditForm(clinic._rowIndex));
     clinicList.appendChild(card);
   });
 }
@@ -192,82 +228,109 @@ function renderClinics(data) {
 searchInput.addEventListener('input', (e) => {
   const searchTerm = e.target.value.toLowerCase();
   const filtered = clinicsData.filter(clinic => {
-    return (clinic.name && clinic.name.toLowerCase().includes(searchTerm)) ||
-           (clinic.clinicCode && clinic.clinicCode.toLowerCase().includes(searchTerm)) ||
-           (clinic.licensee && clinic.licensee.toLowerCase().includes(searchTerm));
+    return headers.some(h => clinic[h] && clinic[h].toString().toLowerCase().includes(searchTerm));
   });
   renderClinics(filtered);
 });
 
-// View Navigation
+// Form Navigation
 btnShowAddForm.addEventListener('click', () => {
-  clinicForm.reset();
-  document.getElementById('formRowIndex').value = '';
-  photosData = [];
-  photoPreviewContainer.style.display = 'none';
-  photoPreviewContainer.innerHTML = '';
-  btnClearPhotos.style.display = 'none';
-  formTitle.textContent = 'เพิ่มข้อมูลคลินิกใหม่';
-  toggleView('form');
+  openAddForm();
 });
 
 btnBack.addEventListener('click', () => {
-  toggleView('list');
+  formView.style.display = 'none';
+  listView.style.display = 'block';
+  btnShowAddForm.style.display = 'block';
 });
 
-function toggleView(view) {
-  if (view === 'form') {
-    listView.style.display = 'none';
-    formView.style.display = 'block';
-    window.scrollTo(0, 0);
-  } else {
-    formView.style.display = 'none';
-    listView.style.display = 'block';
-  }
+function openAddForm() {
+  document.getElementById('formRowIndex').value = '';
+  document.getElementById('formTitle').textContent = `เพิ่มข้อมูล: ${currentTab}`;
+  generateDynamicForm();
+  
+  clearPhotos();
+  listView.style.display = 'none';
+  btnShowAddForm.style.display = 'none';
+  formView.style.display = 'block';
+  window.scrollTo(0, 0);
 }
 
-// Open Edit Form
-function openEditForm(clinic, index) {
-  document.getElementById('formRowIndex').value = index + 2; // +2 because header is row 1 and array is 0-indexed
-  document.getElementById('clinicName').value = clinic.name || '';
-  document.getElementById('clinicCode').value = clinic.clinicCode || '';
-  document.getElementById('oldClinicCode').value = clinic.oldClinicCode || '';
-  document.getElementById('licensee').value = clinic.licensee || '';
-  document.getElementById('operator').value = clinic.operator || '';
-  document.getElementById('licenseNum').value = clinic.licenseNum || '';
-  document.getElementById('licenseeCode').value = clinic.licenseeCode || '';
-  document.getElementById('address').value = clinic.address || '';
-  document.getElementById('subdistrict').value = clinic.subdistrict || '';
-  document.getElementById('district').value = clinic.district || 'ปลวกแดง';
-  document.getElementById('operatingHours').value = clinic.operatingHours || '';
-  document.getElementById('phone').value = clinic.phone || '';
-  document.getElementById('wasteDisposal').value = clinic.wasteDisposal || '';
-  document.getElementById('expiryDate').value = clinic.expiryDate || '';
-  document.getElementById('currentExpiry').value = clinic.currentExpiry || '';
-  document.getElementById('coordinates').value = clinic.coordinates || '';
-  document.getElementById('notes').value = clinic.notes || '';
+function openEditForm(rowIndex) {
+  const clinic = clinicsData.find(c => c._rowIndex === rowIndex);
+  if (!clinic) return;
   
-  photosData = [];
-  photoInput.value = '';
-  photoPreviewContainer.innerHTML = '';
-  btnClearPhotos.style.display = 'none';
+  document.getElementById('formRowIndex').value = rowIndex;
+  document.getElementById('formTitle').textContent = `แก้ไขข้อมูล: ${currentTab}`;
+  generateDynamicForm(clinic);
   
-  // Show existing photos if any
-  if (clinic.photoUrl) {
+  clearPhotos();
+  
+  // Show existing photos
+  const photoKey = headers.find(h => h==='รูปภาพ' || h==='photoUrl' || h==='รูปถ่าย');
+  if (photoKey && clinic[photoKey]) {
     photoPreviewContainer.style.display = 'flex';
-    const urls = String(clinic.photoUrl).split(',').map(u => u.trim()).filter(u => u);
+    const urls = String(clinic[photoKey]).split(',').map(u => u.trim()).filter(u => u);
     urls.forEach(url => {
       const img = document.createElement('img');
       img.src = url;
       img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);';
       photoPreviewContainer.appendChild(img);
     });
-  } else {
-    photoPreviewContainer.style.display = 'none';
   }
+
+  listView.style.display = 'none';
+  btnShowAddForm.style.display = 'none';
+  formView.style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function generateDynamicForm(data = null) {
+  const container = document.getElementById('dynamicFormFields');
+  if (!container) return;
+  container.innerHTML = '';
   
-  formTitle.textContent = 'แก้ไขข้อมูลคลินิก';
-  toggleView('form');
+  headers.forEach((h) => {
+    // Skip system or special fields
+    if (h === 'n' || h.toLowerCase() === 'id' || h === 'รูปภาพ' || h === 'photoUrl' || h === 'รูปถ่าย' || h === 'พิกัด' || h === 'coordinates' || h === 'GPS') {
+      return;
+    }
+    
+    const div = document.createElement('div');
+    div.className = 'form-group';
+    
+    const label = document.createElement('label');
+    label.className = 'form-label';
+    label.textContent = h;
+    div.appendChild(label);
+    
+    // Check if it should be textarea
+    if (h.includes('หมายเหตุ') || h.includes('ที่อยู่') || h.includes('รายละเอียด')) {
+      const textarea = document.createElement('textarea');
+      textarea.className = 'form-input';
+      textarea.id = 'dynamic_' + h;
+      textarea.rows = 2;
+      if (data && data[h]) textarea.value = data[h];
+      div.appendChild(textarea);
+    } else {
+      const input = document.createElement('input');
+      input.type = h.includes('เบอร์') || h.includes('โทร') ? 'tel' : 'text';
+      input.className = 'form-input';
+      input.id = 'dynamic_' + h;
+      if (data && data[h]) input.value = data[h];
+      div.appendChild(input);
+    }
+    
+    container.appendChild(div);
+  });
+  
+  // Populate GPS coordinates if editing
+  const gpsKeys = headers.filter(h => h === 'พิกัด' || h === 'coordinates' || h === 'GPS');
+  if (gpsKeys.length > 0 && data && data[gpsKeys[0]]) {
+    document.getElementById('coordinates').value = data[gpsKeys[0]];
+  } else {
+    document.getElementById('coordinates').value = '';
+  }
 }
 
 // GPS Feature
@@ -301,7 +364,15 @@ function resetGPSButton() {
   btnGPS.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> ดึงพิกัด';
 }
 
-// Photo Upload Feature (Resize to Base64)
+// Photo Upload Feature
+function clearPhotos() {
+  photosData = [];
+  photoInput.value = '';
+  btnClearPhotos.style.display = 'none';
+  photoPreviewContainer.innerHTML = '';
+  photoPreviewContainer.style.display = 'none';
+}
+
 photoInput.addEventListener('change', (e) => {
   const files = e.target.files;
   if (!files || files.length === 0) return;
@@ -335,10 +406,7 @@ photoInput.addEventListener('change', (e) => {
         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
         const base64 = dataUrl.split(',')[1];
         
-        photosData.push({
-          data: base64,
-          mimeType: 'image/jpeg'
-        });
+        photosData.push({ data: base64, mimeType: 'image/jpeg' });
         
         const imgEl = document.createElement('img');
         imgEl.src = dataUrl;
@@ -351,32 +419,7 @@ photoInput.addEventListener('change', (e) => {
   }
 });
 
-btnClearPhotos.addEventListener('click', () => {
-  photosData = [];
-  photoInput.value = '';
-  btnClearPhotos.style.display = 'none';
-  photoPreviewContainer.innerHTML = '';
-  
-  // Re-render existing photos if editing
-  const rowIndex = document.getElementById('formRowIndex').value;
-  if (rowIndex) {
-    const clinic = clinicsData[rowIndex - 2];
-    if (clinic && clinic.photoUrl) {
-      photoPreviewContainer.style.display = 'flex';
-      const urls = String(clinic.photoUrl).split(',').map(u => u.trim()).filter(u => u);
-      urls.forEach(url => {
-        const img = document.createElement('img');
-        img.src = url;
-        img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);';
-        photoPreviewContainer.appendChild(img);
-      });
-    } else {
-      photoPreviewContainer.style.display = 'none';
-    }
-  } else {
-    photoPreviewContainer.style.display = 'none';
-  }
-});
+btnClearPhotos.addEventListener('click', clearPhotos);
 
 // Form Submission
 clinicForm.addEventListener('submit', async (e) => {
@@ -391,29 +434,25 @@ clinicForm.addEventListener('submit', async (e) => {
   
   const rowIndex = document.getElementById('formRowIndex').value;
   const action = rowIndex ? 'edit' : 'add';
+  
+  const rowData = {};
+  headers.forEach(h => {
+    if (h === 'n' || h.toLowerCase() === 'id' || h === 'รูปภาพ' || h === 'photoUrl' || h === 'รูปถ่าย' || h === 'พิกัด' || h === 'coordinates' || h === 'GPS') {
+      return;
+    }
+    const el = document.getElementById('dynamic_' + h);
+    if (el) rowData[h] = el.value;
+  });
+  
+  // Add coordinates manually
+  rowData['พิกัด'] = document.getElementById('coordinates').value;
+
   const payload = {
     action: action,
+    sheetName: currentTab,
     rowIndex: rowIndex,
     username: currentUser ? currentUser.username : 'Unknown',
-    data: {
-      name: document.getElementById('clinicName').value,
-      clinicCode: document.getElementById('clinicCode').value,
-      oldClinicCode: document.getElementById('oldClinicCode').value,
-      licensee: document.getElementById('licensee').value,
-      operator: document.getElementById('operator').value,
-      licenseNum: document.getElementById('licenseNum').value,
-      licenseeCode: document.getElementById('licenseeCode').value,
-      address: document.getElementById('address').value,
-      subdistrict: document.getElementById('subdistrict').value,
-      district: document.getElementById('district').value,
-      operatingHours: document.getElementById('operatingHours').value,
-      phone: document.getElementById('phone').value,
-      wasteDisposal: document.getElementById('wasteDisposal').value,
-      expiryDate: document.getElementById('expiryDate').value,
-      currentExpiry: document.getElementById('currentExpiry').value,
-      coordinates: document.getElementById('coordinates').value,
-      notes: document.getElementById('notes').value
-    },
+    data: rowData,
     photos: photosData
   };
 

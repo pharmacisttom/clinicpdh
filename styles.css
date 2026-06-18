@@ -208,6 +208,46 @@ body {
   gap: 0.5rem;
 }
 
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  overflow-x: auto;
+  background: var(--primary-color);
+  padding: 0 1rem;
+  gap: 1rem;
+  scrollbar-width: none; /* Firefox */
+}
+.tab-nav::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.8rem 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+}
+.tab-btn:hover {
+  color: white;
+}
+.tab-btn.active {
+  color: white;
+  border-bottom: 3px solid white;
+}
+
 /* Utilities */
 .hidden {
   display: none;

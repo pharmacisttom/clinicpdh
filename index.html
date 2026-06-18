@@ -38,17 +38,22 @@
   <div class="app-container" id="appContainer" style="display: none;">
     <!-- Header -->
     <header class="header" style="display: flex; justify-content: space-between; align-items: center; padding-right: 1.5rem;">
-      <div class="header-title">📋 ระบบตรวจคลินิก</div>
+      <div class="header-title">📋 ระบบเก็บข้อมูลลงพื้นที่</div>
       <div style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; color: white;">
         <span id="userProfileName"></span>
         <button id="btnLogout" class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: rgba(255,255,255,0.2); border: none; color: white;">ออก</button>
       </div>
     </header>
 
+    <!-- Tab Navigation -->
+    <div id="tabNav" class="tab-nav">
+      <!-- Tabs will be injected here dynamically -->
+    </div>
+
   <main class="container">
     
     <!-- List View -->
-    <div id="listView">
+    <section id="listView" class="list-view">
       <div class="search-container">
         <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -64,113 +69,9 @@
       <div id="clinicList" class="clinic-list">
         <!-- Clinic cards will be injected here via JS -->
       </div>
-    </div>
+    </section>
 
     <!-- Form View -->
-    <div id="formView" class="form-view">
-      <div class="form-header">
-        <button id="btnBack" class="btn-back">
-          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-          </svg>
-        </button>
-        <h2 id="formTitle">เพิ่มข้อมูลคลินิกใหม่</h2>
-      </div>
-
-      <form id="clinicForm">
-        <input type="hidden" id="formRowIndex" value="">
-        
-        <div class="form-group">
-          <label class="form-label" for="clinicName">ชื่อคลินิก *</label>
-          <input type="text" id="clinicName" class="form-input" required placeholder="เช่น บุญประทานคลินิกเวชกรรม">
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="clinicCode">รหัสคลินิก *</label>
-            <input type="text" id="clinicCode" class="form-input" required placeholder="11 หลัก">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="oldClinicCode">รหัสคลินิกเดิม</label>
-            <input type="text" id="oldClinicCode" class="form-input" placeholder="ถ้ามี">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="licensee">ผู้รับอนุญาต</label>
-          <input type="text" id="licensee" class="form-input">
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="operator">ผู้ดำเนินการ</label>
-            <input type="text" id="operator" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="licenseNum">เลขที่ใบประกอบฯ</label>
-            <input type="text" id="licenseNum" class="form-input">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="licenseeCode">รหัสผู้รับอนุญาต</label>
-          <input type="text" id="licenseeCode" class="form-input">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="address">ที่อยู่</label>
-          <textarea id="address" class="form-input" rows="2"></textarea>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="subdistrict">ตำบล</label>
-            <input type="text" id="subdistrict" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="district">อำเภอ</label>
-            <input type="text" id="district" class="form-input" value="ปลวกแดง">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="operatingHours">เวลาเปิดทำการ</label>
-          <input type="text" id="operatingHours" class="form-input" placeholder="เช่น ทุกวัน 08.00-20.00 น.">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="phone">เบอร์โทรศัพท์</label>
-          <input type="tel" id="phone" class="form-input">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="wasteDisposal">แหล่งกำจัดขยะติดเชื้อ</label>
-          <input type="text" id="wasteDisposal" class="form-input">
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="expiryDate">ปีที่หมดอายุ</label>
-            <input type="text" id="expiryDate" class="form-input" placeholder="เช่น 2568">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="currentExpiry">วันที่หมดอายุปัจจุบัน</label>
-            <input type="text" id="currentExpiry" class="form-input">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="coordinates">พิกัดคลินิก (Lat, Long)</label>
-          <div style="display: flex; gap: 0.5rem;">
-            <input type="text" id="coordinates" class="form-input" placeholder="เช่น 13.015, 101.151" style="flex: 1;">
-            <button type="button" id="btnGPS" class="btn-secondary">
-              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-              ดึงพิกัด
-            </button>
-          </div>
-        </div>
-
-        <div class="form-group">
           <label class="form-label" for="photo">รูปภาพแนบ (ถ่ายรูป / เลือกไฟล์หลายรูปได้)</label>
           <input type="file" id="photo" class="form-input" accept="image/*" multiple capture="environment">
           <div style="margin-top: 0.5rem; text-align: right;">

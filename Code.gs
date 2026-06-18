@@ -5,42 +5,37 @@
 
 const SPREADSHEET_ID = "18QUAMEGd4_runFgxfT8rXC0wTa205nCdCZ_Ho2bIsg4";
 
-// รับ HTTP GET (สำหรับการดึงข้อมูลคลินิกทั้งหมด)
+// รับ HTTP GET (ดึงข้อมูลทุกแท็บแบบ Dynamic)
 function doGet(e) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = ss.getSheets()[0]; // ดึงแท็บแรกสุดเสมอ ไม่ต้องกังวลเรื่องชื่อชีต
-    if (!sheet) throw new Error("ไม่พบแท็บชีต");
+    const allSheets = ss.getSheets();
+    const result = {};
     
-    const data = sheet.getDataRange().getValues();
-    const result = [];
-    
-    // วนลูปอ่านข้อมูลข้ามแถวแรก (Header)
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      // แมพคอลัมน์จาก Sheet ให้ตรงกับตัวแปร (เรียงตามลำดับคอลัมน์ใน Sheet)
-      result.push({
-        n: row[0],
-        name: row[1],
-        clinicCode: row[2],
-        oldClinicCode: row[3],
-        licensee: row[4],
-        operator: row[5],
-        licenseNum: row[6],
-        licenseeCode: row[7],
-        address: row[8],
-        subdistrict: row[9],
-        district: row[10],
-        operatingHours: row[11],
-        phone: row[12],
-        wasteDisposal: row[13],
-        expiryDate: row[14],
-        currentExpiry: row[15],
-        notes: row[16],
-        equipment: row[17],
-        coordinates: row[18],
-        photoUrl: row[19] || ""
-      });
+    for (let s = 0; s < allSheets.length; s++) {
+      const sheetName = allSheets[s].getName();
+      if (sheetName === 'Users' || sheetName === 'Logs') continue;
+      
+      const data = allSheets[s].getDataRange().getValues();
+      if (data.length === 0) continue;
+      
+      const headers = data[0];
+      const rows = [];
+      
+      for (let i = 1; i < data.length; i++) {
+        const rowData = {};
+        for (let j = 0; j < headers.length; j++) {
+          const key = headers[j] ? headers[j].toString().trim() : ("Column" + j);
+          rowData[key] = data[i][j] !== undefined ? data[i][j] : "";
+        }
+        rowData['_rowIndex'] = i + 1; // เก็บหมายเลขแถวสำหรับการ Edit
+        rows.push(rowData);
+      }
+      
+      result[sheetName] = {
+        headers: headers.map((h, i) => h ? h.toString().trim() : ("Column" + i)),
+        rows: rows
+      };
     }
     
     return ContentService.createTextOutput(JSON.stringify({ status: "success", data: result }))
@@ -96,29 +91,52 @@ function doPost(e) {
     // ==========================================
     // ACTION: ADD / EDIT
     // ==========================================
+    const targetSheetName = payload.sheetName;
+    if (!targetSheetName) throw new Error("ไม่พบข้อมูล sheetName");
+    
+    const targetSheet = ss.getSheetByName(targetSheetName);
+    if (!targetSheet) throw new Error("ไม่พบแท็บ: " + targetSheetName);
+
     const d = payload.data;
     let photoUrl = "";
     
+    // อ่าน Header ของแท็บเป้าหมาย
+    const sheetData = targetSheet.getDataRange().getValues();
+    let headers = [];
+    if (sheetData.length > 0) {
+      headers = sheetData[0].map(h => h ? h.toString().trim() : "");
+    }
+    
+    // หาคอลัมน์ พิกัด และ รูปภาพ (หรือสร้างใหม่ถ้าไม่มี)
+    let photoColIndex = headers.findIndex(h => h === "รูปภาพ" || h === "photoUrl" || h === "รูปถ่าย");
+    if (photoColIndex === -1) {
+      targetSheet.getRange(1, headers.length + 1).setValue("รูปภาพ");
+      headers.push("รูปภาพ");
+      photoColIndex = headers.length - 1;
+    }
+    
+    let gpsColIndex = headers.findIndex(h => h === "พิกัด" || h === "coordinates" || h === "GPS");
+    if (gpsColIndex === -1) {
+      targetSheet.getRange(1, headers.length + 1).setValue("พิกัด");
+      headers.push("พิกัด");
+      gpsColIndex = headers.length - 1;
+    }
+
     // ถ้าเป็นการแก้ไข ให้ดึงรูปลิงก์เดิมมาก่อน
     if (action === 'edit' && payload.rowIndex) {
-       photoUrl = sheet.getRange(payload.rowIndex, 20).getValue();
+       photoUrl = targetSheet.getRange(payload.rowIndex, photoColIndex + 1).getValue();
     }
 
     if (payload.photos && payload.photos.length > 0) {
       const folderName = "Clinic_Photos";
       const folders = DriveApp.getFoldersByName(folderName);
-      let folder;
-      if (folders.hasNext()) {
-        folder = folders.next();
-      } else {
-        folder = DriveApp.createFolder(folderName);
-      }
+      let folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
       
       let newUrls = [];
       for (let i = 0; i < payload.photos.length; i++) {
         const photo = payload.photos[i];
         if (photo && photo.data) {
-          const blob = Utilities.newBlob(Utilities.base64Decode(photo.data), photo.mimeType, "Clinic_" + new Date().getTime() + "_" + i + ".jpg");
+          const blob = Utilities.newBlob(Utilities.base64Decode(photo.data), photo.mimeType, targetSheetName + "_" + new Date().getTime() + "_" + i + ".jpg");
           const file = folder.createFile(blob);
           file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
           newUrls.push(file.getUrl());
@@ -134,35 +152,26 @@ function doPost(e) {
       }
     }
     
-    const rowData = [
-      "",
-      d.name,
-      d.clinicCode,
-      d.oldClinicCode,
-      d.licensee,
-      d.operator,
-      d.licenseNum,
-      d.licenseeCode,
-      d.address,
-      d.subdistrict,
-      d.district,
-      d.operatingHours,
-      d.phone,
-      d.wasteDisposal,
-      d.expiryDate,
-      d.currentExpiry,
-      d.notes,
-      d.equipment || "",
-      d.coordinates,
-      photoUrl
-    ];
+    // ประกอบข้อมูลให้ตรงตาม Header
+    const rowData = [];
+    for (let j = 0; j < headers.length; j++) {
+      const h = headers[j];
+      if (j === photoColIndex) {
+        rowData.push(photoUrl);
+      } else if (j === gpsColIndex) {
+        rowData.push(d[h] !== undefined ? d[h] : (d['coordinates'] || d['พิกัด'] || ""));
+      } else if (j === 0 && action === 'add') {
+        // คอลัมน์แรก มักจะเป็น ลำดับ (n)
+        rowData.push(targetSheet.getLastRow());
+      } else {
+        rowData.push(d[h] !== undefined ? d[h] : "");
+      }
+    }
 
     if (action === 'edit' && payload.rowIndex) {
-      sheet.getRange(payload.rowIndex, 1, 1, rowData.length).setValues([rowData]);
+      targetSheet.getRange(payload.rowIndex, 1, 1, rowData.length).setValues([rowData]);
     } else if (action === 'add') {
-      const lastRow = sheet.getLastRow();
-      rowData[0] = lastRow;
-      sheet.appendRow(rowData);
+      targetSheet.appendRow(rowData);
     }
     
     try {
@@ -180,6 +189,35 @@ function doPost(e) {
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ฟังก์ชันสำหรับเซ็ตอัปฐานข้อมูล (สร้างแท็บ Users และ Logs ให้โดยอัตโนมัติ)
+function setupDatabase() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  
+  // สร้างแท็บ Users
+  let usersSheet = ss.getSheetByName("Users");
+  if (!usersSheet) {
+    usersSheet = ss.insertSheet("Users");
+    usersSheet.appendRow(["Username", "Password", "Role", "Name"]);
+    // เพิ่ม Admin เริ่มต้น
+    usersSheet.appendRow(["admin", "adminadmin", "Admin", "ผู้ดูแลระบบ"]);
+    usersSheet.getRange("A1:D1").setFontWeight("bold");
+    Logger.log("สร้างแท็บ Users และเพิ่มไอดี admin สำเร็จ!");
+  } else {
+    Logger.log("แท็บ Users มีอยู่แล้ว");
+  }
+  
+  // สร้างแท็บ Logs
+  let logsSheet = ss.getSheetByName("Logs");
+  if (!logsSheet) {
+    logsSheet = ss.insertSheet("Logs");
+    logsSheet.appendRow(["Timestamp", "Username", "Action", "Details"]);
+    logsSheet.getRange("A1:D1").setFontWeight("bold");
+    Logger.log("สร้างแท็บ Logs สำเร็จ!");
+  } else {
+    Logger.log("แท็บ Logs มีอยู่แล้ว");
   }
 }
 
