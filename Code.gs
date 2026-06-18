@@ -134,9 +134,13 @@ function doPost(e) {
     }
 
     if (payload.photos && payload.photos.length > 0) {
-      const folderName = "Clinic_Photos";
-      const folders = DriveApp.getFoldersByName(folderName);
-      let folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+      const FOLDER_ID = "1TS2WoCjMscxNv5y09g_6gPAF1yPgiqoe";
+      let folder;
+      try {
+        folder = DriveApp.getFolderById(FOLDER_ID);
+      } catch(e) {
+        throw new Error("ไม่สามารถเข้าถึงโฟลเดอร์ Google Drive ได้ กรุณาตรวจสอบสิทธิ์หรือ Folder ID");
+      }
       
       let newUrls = [];
       for (let i = 0; i < payload.photos.length; i++) {
