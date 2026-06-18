@@ -53,16 +53,18 @@ function init() {
 function showLogin() {
   loginView.style.display = 'flex';
   appContainer.style.display = 'none';
-  loginUsernameInput.value = '';
-  loginPasswordInput.value = '';
-  loginError.style.display = 'none';
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
 }
 
 function showApp() {
   loginView.style.display = 'none';
   appContainer.style.display = 'block';
-  userProfileName.textContent = `👤 ${currentUser.name} (${currentUser.role})`;
-  fetchClinics();
+  document.getElementById('userProfileName').textContent = `👤 ${currentUser.name} (${currentUser.role})`;
+  
+  if (Object.keys(allData).length === 0) {
+    fetchClinics();
+  }
 }
 
 // Login Event
@@ -71,14 +73,12 @@ btnLogin.addEventListener('click', async () => {
   const password = loginPasswordInput.value.trim();
   
   if (!username || !password) {
-    loginError.textContent = 'กรุณากรอก Username และ Password';
-    loginError.style.display = 'block';
+    Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณากรอก Username และ Password' });
     return;
   }
   
   btnLogin.disabled = true;
   btnLogin.textContent = 'กำลังตรวจสอบ...';
-  loginError.style.display = 'none';
   
   try {
     const payload = {
@@ -93,17 +93,15 @@ btnLogin.addEventListener('click', async () => {
     });
     const result = await response.json();
     
-    if (result.success) {
+    if (result.status === 'success') {
       currentUser = result.user;
       localStorage.setItem('clinic_user', JSON.stringify(currentUser));
       showApp();
     } else {
-      loginError.textContent = result.message || 'รหัสผ่านไม่ถูกต้อง หรือไม่พบผู้ใช้งาน';
-      loginError.style.display = 'block';
+      Swal.fire({ icon: 'error', title: 'ล็อกอินล้มเหลว', text: result.message || 'รหัสผ่านไม่ถูกต้อง หรือไม่พบผู้ใช้งาน' });
     }
   } catch (error) {
-    loginError.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
-    loginError.style.display = 'block';
+    Swal.fire({ icon: 'error', title: 'ล็อกอินล้มเหลว', text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้' });
   } finally {
     btnLogin.disabled = false;
     btnLogin.textContent = 'เข้าสู่ระบบ';
@@ -156,11 +154,16 @@ function renderTabs() {
   if (!tabNav) return;
   tabNav.innerHTML = '';
   Object.keys(allData).forEach(tab => {
+    const li = document.createElement('li');
+    li.className = 'nav-item';
+    
     const btn = document.createElement('button');
-    btn.className = `tab-btn ${tab === currentTab ? 'active' : ''}`;
+    btn.className = `nav-link ${tab === currentTab ? 'active fw-bold text-primary border-bottom border-primary border-3' : 'text-secondary border-0'}`;
     btn.textContent = tab;
     btn.onclick = () => switchTab(tab);
-    tabNav.appendChild(btn);
+    
+    li.appendChild(btn);
+    tabNav.appendChild(li);
   });
 }
 
@@ -178,7 +181,7 @@ function renderClinics(dataToRender) {
   clinicList.innerHTML = '';
   
   if (dataToRender.length === 0) {
-    clinicList.innerHTML = '<p style="text-align:center; color:var(--text-light); margin-top:2rem;">ไม่มีข้อมูล</p>';
+    clinicList.innerHTML = '<div class="col-12 text-center text-secondary py-5">ไม่มีข้อมูล</div>';
     return;
   }
   
@@ -187,32 +190,43 @@ function renderClinics(dataToRender) {
   const sub2Field = headers[4] || headers[3] || '';
 
   dataToRender.forEach((clinic) => {
+    const col = document.createElement('div');
+    col.className = 'col-12 col-md-6 col-lg-4';
+    
     const card = document.createElement('div');
-    card.className = 'clinic-card';
+    card.className = 'card h-100 shadow-sm border-0 clinic-card';
+    card.style.cursor = 'pointer';
     
     const title = clinic[titleField] || 'ไม่มีชื่อ';
     const sub1 = sub1Field && clinic[sub1Field] ? `${sub1Field}: ${clinic[sub1Field]}` : '';
     const sub2 = sub2Field && clinic[sub2Field] ? `${sub2Field}: ${clinic[sub2Field]}` : '';
     
     // Check for GPS and Photos
-    const hasGps = headers.some(h => (h==='พิกัด' || h==='coordinates' || h==='GPS') && clinic[h] && clinic[h].toString().trim() !== '');
-    const photoKey = headers.find(h => h==='รูปภาพ' || h==='photoUrl' || h==='รูปถ่าย');
+    const hasGps = headers.some(h => {
+      const hl = h.toLowerCase();
+      return hl.includes('พิกัด') || hl.includes('gps') || hl.includes('coordinate');
+    }) && headers.some(h => clinic[h] && clinic[h].toString().trim() !== '');
+
+    const photoKey = headers.find(h => {
+      const hl = h.toLowerCase();
+      return hl.includes('รูป') || hl.includes('ภาพ') || hl.includes('photo') || hl.includes('image');
+    });
     const photoStr = photoKey ? clinic[photoKey] : '';
     const hasPhotos = photoStr && photoStr.toString().trim() !== '';
     let photoCount = 0;
     if (hasPhotos) photoCount = String(photoStr).split(',').length;
     
-    const gpsHtml = hasGps ? `<span class="status-badge status-active">📍 มีพิกัด</span>` : `<span class="status-badge" style="background:var(--bg-color);color:var(--text-light);">📍 ไม่มีพิกัด</span>`;
-    const photoHtml = hasPhotos ? `<span class="status-badge status-active">📸 รูป (${photoCount})</span>` : `<span class="status-badge" style="background:var(--bg-color);color:var(--text-light);">📸 ไม่มีรูป</span>`;
+    const gpsHtml = hasGps ? `<span class="badge bg-success-subtle text-success rounded-pill px-2 py-1">📍 มีพิกัด</span>` : `<span class="badge bg-light text-secondary rounded-pill border px-2 py-1">📍 ไม่มีพิกัด</span>`;
+    const photoHtml = hasPhotos ? `<span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1">📸 รูป (${photoCount})</span>` : `<span class="badge bg-light text-secondary rounded-pill border px-2 py-1">📸 ไม่มีรูป</span>`;
 
     card.innerHTML = `
-      <div class="clinic-header">
-        <h3 class="clinic-title">${title}</h3>
-      </div>
-      <div class="clinic-details">
-        ${sub1 ? `<div class="detail-item"><strong>${sub1}</strong></div>` : ''}
-        ${sub2 ? `<div class="detail-item"><strong>${sub2}</strong></div>` : ''}
-        <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title text-primary fw-bold mb-3">${title}</h5>
+        <div class="card-text text-secondary small mb-3 flex-grow-1">
+          ${sub1 ? `<div class="mb-1"><strong>${sub1Field}:</strong> ${clinic[sub1Field]}</div>` : ''}
+          ${sub2 ? `<div><strong>${sub2Field}:</strong> ${clinic[sub2Field]}</div>` : ''}
+        </div>
+        <div class="d-flex gap-2 mt-auto">
           ${gpsHtml}
           ${photoHtml}
         </div>
@@ -220,7 +234,8 @@ function renderClinics(dataToRender) {
     `;
     
     card.addEventListener('click', () => openEditForm(clinic._rowIndex));
-    clinicList.appendChild(card);
+    col.appendChild(card);
+    clinicList.appendChild(col);
   });
 }
 
@@ -472,7 +487,9 @@ clinicForm.addEventListener('submit', async (e) => {
     
     if (result.status === 'success') {
       showToast('บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
-      toggleView('list');
+      formView.style.display = 'none';
+      listView.style.display = 'block';
+      btnShowAddForm.style.display = 'block';
       fetchClinics(); // Refresh data
     } else {
       showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
@@ -485,19 +502,28 @@ clinicForm.addEventListener('submit', async (e) => {
   }
 });
 
-function setLoading(isLoading) {
-  btnSubmit.disabled = isLoading;
-  submitText.style.display = isLoading ? 'none' : 'block';
-  submitLoader.style.display = isLoading ? 'block' : 'none';
+function showToast(message, type = 'success') {
+  Swal.fire({
+    icon: type === 'error' ? 'error' : 'success',
+    title: type === 'error' ? 'เกิดข้อผิดพลาด' : 'สำเร็จ!',
+    text: message,
+    timer: 2500,
+    showConfirmButton: false,
+    toast: true,
+    position: 'top-end'
+  });
 }
 
-function showToast(message, type = 'success') {
-  toast.textContent = message;
-  toast.className = `toast show ${type}`;
-  
-  setTimeout(() => {
-    toast.className = 'toast';
-  }, 3000);
+function setLoading(isLoading) {
+  if (isLoading) {
+    btnSubmit.disabled = true;
+    submitText.style.display = 'none';
+    submitLoader.style.display = 'inline-block';
+  } else {
+    btnSubmit.disabled = false;
+    submitText.style.display = 'inline-block';
+    submitLoader.style.display = 'none';
+  }
 }
 
 // Start
