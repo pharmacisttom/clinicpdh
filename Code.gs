@@ -108,14 +108,20 @@ function doPost(e) {
     }
     
     // หาคอลัมน์ พิกัด และ รูปภาพ (หรือสร้างใหม่ถ้าไม่มี)
-    let photoColIndex = headers.findIndex(h => h === "รูปภาพ" || h === "photoUrl" || h === "รูปถ่าย");
+    let photoColIndex = headers.findIndex(h => {
+      const hl = h.toLowerCase();
+      return hl.includes("รูป") || hl.includes("ภาพ") || hl.includes("photo") || hl.includes("image");
+    });
     if (photoColIndex === -1) {
       targetSheet.getRange(1, headers.length + 1).setValue("รูปภาพ");
       headers.push("รูปภาพ");
       photoColIndex = headers.length - 1;
     }
     
-    let gpsColIndex = headers.findIndex(h => h === "พิกัด" || h === "coordinates" || h === "GPS");
+    let gpsColIndex = headers.findIndex(h => {
+      const hl = h.toLowerCase();
+      return hl.includes("พิกัด") || hl.includes("gps") || hl.includes("coordinate");
+    });
     if (gpsColIndex === -1) {
       targetSheet.getRange(1, headers.length + 1).setValue("พิกัด");
       headers.push("พิกัด");

@@ -291,8 +291,11 @@ function generateDynamicForm(data = null) {
   container.innerHTML = '';
   
   headers.forEach((h) => {
-    // Skip system or special fields
-    if (h === 'n' || h.toLowerCase() === 'id' || h === 'รูปภาพ' || h === 'photoUrl' || h === 'รูปถ่าย' || h === 'พิกัด' || h === 'coordinates' || h === 'GPS') {
+    const hLower = h.toLowerCase();
+    // Skip system or special fields more aggressively
+    if (hLower === 'n' || hLower === 'id' || 
+        hLower.includes('รูป') || hLower.includes('ภาพ') || hLower.includes('photo') || hLower.includes('image') || 
+        hLower.includes('พิกัด') || hLower.includes('gps') || hLower.includes('coordinate')) {
       return;
     }
     
@@ -305,7 +308,7 @@ function generateDynamicForm(data = null) {
     div.appendChild(label);
     
     // Check if it should be textarea
-    if (h.includes('หมายเหตุ') || h.includes('ที่อยู่') || h.includes('รายละเอียด')) {
+    if (hLower.includes('หมายเหตุ') || hLower.includes('ที่อยู่') || hLower.includes('รายละเอียด') || hLower.includes('ข้อมูลเพิ่มเติม')) {
       const textarea = document.createElement('textarea');
       textarea.className = 'form-input';
       textarea.id = 'dynamic_' + h;
@@ -314,7 +317,7 @@ function generateDynamicForm(data = null) {
       div.appendChild(textarea);
     } else {
       const input = document.createElement('input');
-      input.type = h.includes('เบอร์') || h.includes('โทร') ? 'tel' : 'text';
+      input.type = hLower.includes('เบอร์') || hLower.includes('โทร') || hLower.includes('phone') ? 'tel' : 'text';
       input.className = 'form-input';
       input.id = 'dynamic_' + h;
       if (data && data[h]) input.value = data[h];
@@ -437,7 +440,10 @@ clinicForm.addEventListener('submit', async (e) => {
   
   const rowData = {};
   headers.forEach(h => {
-    if (h === 'n' || h.toLowerCase() === 'id' || h === 'รูปภาพ' || h === 'photoUrl' || h === 'รูปถ่าย' || h === 'พิกัด' || h === 'coordinates' || h === 'GPS') {
+    const hLower = h.toLowerCase();
+    if (hLower === 'n' || hLower === 'id' || 
+        hLower.includes('รูป') || hLower.includes('ภาพ') || hLower.includes('photo') || hLower.includes('image') || 
+        hLower.includes('พิกัด') || hLower.includes('gps') || hLower.includes('coordinate')) {
       return;
     }
     const el = document.getElementById('dynamic_' + h);
