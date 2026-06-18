@@ -188,10 +188,12 @@ function doPost(e) {
       const logsSheet = ss.getSheetByName("Logs");
       if (logsSheet) {
         const logAction = (action === 'edit') ? "แก้ไขข้อมูล" : "เพิ่มข้อมูลใหม่";
-        const details = "คลินิก: " + d.name;
+        const details = "ข้อมูลอ้างอิง: " + (rowData[1] || rowData[0] || "ไม่ระบุ");
         logsSheet.appendRow([new Date(), payload.username || "Unknown", logAction, details]);
       }
-    } catch(err) {}
+    } catch(err) {
+      Logger.log("Log error: " + err);
+    }
     
     return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
       .setMimeType(ContentService.MimeType.JSON);

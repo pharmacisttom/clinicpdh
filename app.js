@@ -220,15 +220,24 @@ function renderClinics(dataToRender) {
     const photoHtml = hasPhotos ? `<span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1">📸 รูป (${photoCount})</span>` : `<span class="badge bg-light text-secondary rounded-pill border px-2 py-1">📸 ไม่มีรูป</span>`;
 
     card.innerHTML = `
-      <div class="card-body d-flex flex-column">
-        <h5 class="card-title text-primary fw-bold mb-3">${title}</h5>
-        <div class="card-text text-secondary small mb-3 flex-grow-1">
-          ${sub1 ? `<div class="mb-1"><strong>${sub1Field}:</strong> ${clinic[sub1Field]}</div>` : ''}
-          ${sub2 ? `<div><strong>${sub2Field}:</strong> ${clinic[sub2Field]}</div>` : ''}
+      <div class="card-body d-flex flex-column position-relative">
+        <h5 class="card-title text-primary fw-bold mb-3 pe-4">
+          <span style="font-size: 1.1em; margin-right: 4px;">📑</span>${title}
+        </h5>
+        
+        <div class="card-text text-secondary small mb-4 flex-grow-1" style="line-height: 1.6;">
+          ${sub1 ? `<div class="mb-2"><span style="opacity: 0.7;">🔹</span> <strong class="text-dark">${sub1Field}:</strong> ${clinic[sub1Field]}</div>` : ''}
+          ${sub2 ? `<div><span style="opacity: 0.7;">🔸</span> <strong class="text-dark">${sub2Field}:</strong> ${clinic[sub2Field]}</div>` : ''}
         </div>
-        <div class="d-flex gap-2 mt-auto">
+        
+        <div class="d-flex gap-2 mt-auto pt-3 border-top border-light">
           ${gpsHtml}
           ${photoHtml}
+        </div>
+        
+        <!-- Hover indicator icon -->
+        <div class="position-absolute text-primary" style="right: 1.2rem; top: 1.5rem; opacity: 0.2;">
+           <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
         </div>
       </div>
     `;

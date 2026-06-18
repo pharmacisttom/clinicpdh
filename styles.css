@@ -24,13 +24,15 @@ body {
   border-bottom: 3px solid transparent;
   padding: 0.8rem 1rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   cursor: pointer;
   background: transparent;
 }
 .nav-tabs .nav-link:hover {
   color: var(--primary-color);
   border-color: transparent;
+  background-color: rgba(79, 70, 229, 0.05);
+  border-radius: 8px 8px 0 0;
 }
 .nav-tabs .nav-link.active {
   color: var(--primary-color);
@@ -38,28 +40,67 @@ body {
   background: transparent;
 }
 
-/* Custom Cards */
+/* Custom Cards UI */
 .clinic-card {
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  border-radius: 12px !important;
+  overflow: hidden;
+  background-color: #ffffff;
 }
+
 .clinic-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 .5rem 1rem rgba(0,0,0,.08)!important;
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(79, 70, 229, 0.15) !important;
+  border-color: rgba(79, 70, 229, 0.3) !important;
 }
 
-/* Badges */
-.status-badge {
-  padding: 0.35rem 0.65rem;
-  border-radius: 2rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  display: inline-block;
+.clinic-card .card-body {
+  padding: 1.5rem !important;
 }
-.status-active { background: #D1FAE5; color: #065F46; }
 
-/* Custom Inputs */
-.form-control:focus {
+.clinic-card .card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.15rem;
+}
+
+/* Custom Scrollbar for better UI */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.3); 
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.5); 
+}
+
+/* Inputs and Buttons styling */
+.form-control, .form-select {
+  border-radius: 8px;
+  border: 1px solid #D1D5DB;
+  padding: 0.6rem 1rem;
+  transition: all 0.2s;
+}
+
+.form-control:focus, .form-select:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.25);
+  box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.2);
+}
+
+.btn {
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  transition: all 0.2s;
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
