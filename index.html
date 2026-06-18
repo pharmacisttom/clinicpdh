@@ -11,12 +11,6 @@
 </head>
 <body>
 
-  <!-- Navbar -->
-  <nav class="navbar">
-    <h1>ระบบจัดการคลินิก</h1>
-    <button class="btn-add" id="btnShowAddForm">+ เพิ่มคลินิก</button>
-  </nav>
-
   <!-- Login View -->
   <div id="loginView" class="login-container" style="display: none;">
     <div class="login-card">
@@ -54,14 +48,17 @@
     
     <!-- List View -->
     <section id="listView" class="list-view">
-      <div class="search-container">
-        <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-        </svg>
-        <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาคลินิก, รหัส หรือชื่อผู้รับอนุญาต...">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+        <div class="search-container" style="flex: 1; margin-right: 1rem; margin-bottom: 0;">
+          <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาข้อมูล...">
+        </div>
+        <button class="btn-add" id="btnShowAddForm">+ เพิ่มข้อมูล</button>
       </div>
 
-      <div id="loadingState" class="loading-state">
+      <div id="loadingState" class="loading-state" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 3rem 0;">
         <div class="spinner-large"></div>
         <p>กำลังโหลดข้อมูล...</p>
       </div>
@@ -72,28 +69,51 @@
     </section>
 
     <!-- Form View -->
-          <label class="form-label" for="photo">รูปภาพแนบ (ถ่ายรูป / เลือกไฟล์หลายรูปได้)</label>
-          <input type="file" id="photo" class="form-input" accept="image/*" multiple capture="environment">
-          <div style="margin-top: 0.5rem; text-align: right;">
-            <button type="button" id="btnClearPhotos" class="btn-secondary" style="display:none; margin-left: auto; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: var(--danger-color); color: var(--danger-color);">ล้างรูปภาพใหม่ที่เลือก</button>
+    <section id="formView" class="form-view" style="display: none;">
+      <button class="btn-back" id="btnBack">← กลับไปหน้ารายการ</button>
+      
+      <div class="card">
+        <h2 id="formTitle" style="margin-bottom:1.5rem; color:var(--primary-color);">เพิ่มข้อมูลใหม่</h2>
+        
+        <form id="clinicForm">
+          <input type="hidden" id="formRowIndex" value="">
+          
+          <!-- Dynamic Form Fields Container -->
+          <div id="dynamicFormFields"></div>
+          
+          <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+          
+          <!-- GPS Feature -->
+          <div class="form-group">
+            <label class="form-label" for="coordinates">พิกัด GPS (ละติจูด, ลองจิจูด)</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="coordinates" class="form-input" placeholder="คลิกปุ่มเพื่อดึงพิกัดอัตโนมัติ" readonly style="flex: 1; background-color: var(--bg-color);">
+              <button type="button" id="btnGPS" class="btn-secondary" style="white-space: nowrap;">
+                📍 ดึงพิกัด
+              </button>
+            </div>
           </div>
-          <div id="photoPreviewContainer" style="display:none; margin-top:0.5rem; flex-wrap: wrap; gap: 0.5rem;">
-            <!-- Images will be injected here -->
+
+          <div class="form-group">
+            <label class="form-label" for="photo">รูปภาพแนบ (ถ่ายรูป / เลือกไฟล์หลายรูปได้)</label>
+            <input type="file" id="photo" class="form-input" accept="image/*" multiple capture="environment">
+            <div style="margin-top: 0.5rem; text-align: right;">
+              <button type="button" id="btnClearPhotos" class="btn-secondary" style="display:none; margin-left: auto; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: var(--danger-color); color: var(--danger-color);">ล้างรูปภาพใหม่ที่เลือก</button>
+            </div>
+            <div id="photoPreviewContainer" style="display:none; margin-top:0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+              <!-- Images will be injected here -->
+            </div>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="notes">ข้อเพิ่มเติม / เครื่องมือแพทย์</label>
-          <textarea id="notes" class="form-input" rows="3"></textarea>
-        </div>
-
-        <button type="submit" id="btnSubmit" class="btn-submit">
-          <span id="submitText">บันทึกข้อมูล</span>
-          <div id="submitLoader" class="loader"></div>
-        </button>
-      </form>
-    </div>
+          
+          <button type="submit" id="btnSubmit" class="btn-primary" style="width:100%; margin-top:1rem;">
+            <span id="submitText">💾 บันทึกข้อมูล</span>
+            <div id="submitLoader" class="loader" style="display: none; margin: 0 auto;"></div>
+          </button>
+        </form>
+      </div>
+    </section>
   </main>
+  </div>
 
   <div id="toast" class="toast"></div>
 
