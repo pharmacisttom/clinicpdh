@@ -58,9 +58,45 @@ function doPost(e) {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = ss.getSheets()[0];
     const payload = JSON.parse(e.postData.contents);
-    const action = payload.action; // 'add' หรือ 'edit'
-    const d = payload.data;
+    const action = payload.action; // 'add', 'edit', 'login'
     
+    // ==========================================
+    // ACTION: LOGIN
+    // ==========================================
+    if (action === 'login') {
+      const usersSheet = ss.getSheetByName("Users");
+      if (!usersSheet) {
+        return ContentService.createTextOutput(JSON.stringify({ success: false, message: "ไม่พบแท็บ Users ในระบบ" })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      const usersData = usersSheet.getDataRange().getValues();
+      for (let i = 1; i < usersData.length; i++) {
+        const row = usersData[i];
+        if (row[0] == payload.username && row[1] == payload.password) {
+          try {
+            const logsSheet = ss.getSheetByName("Logs");
+            if (logsSheet) logsSheet.appendRow([new Date(), payload.username, "เข้าสู่ระบบ", "สำเร็จ"]);
+          } catch(e) {}
+          
+          return ContentService.createTextOutput(JSON.stringify({
+            success: true,
+            user: { username: row[0], role: row[2], name: row[3] }
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+      
+      try {
+        const logsSheet = ss.getSheetByName("Logs");
+        if (logsSheet) logsSheet.appendRow([new Date(), payload.username, "พยายามเข้าสู่ระบบ", "รหัสผ่านผิดพลาด"]);
+      } catch(e) {}
+      
+      return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Username หรือ Password ไม่ถูกต้อง" })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // ==========================================
+    // ACTION: ADD / EDIT
+    // ==========================================
+    const d = payload.data;
     let photoUrl = "";
     
     // ถ้าเป็นการแก้ไข ให้ดึงรูปลิงก์เดิมมาก่อน
@@ -98,9 +134,8 @@ function doPost(e) {
       }
     }
     
-    // สร้าง Array ข้อมูลสำหรับ 1 แถว (เรียงตามคอลัมน์ใน Sheet)
     const rowData = [
-      "", // n (ควรจะมีระบบรันเลข หรือเว้นไว้)
+      "",
       d.name,
       d.clinicCode,
       d.oldClinicCode,
@@ -123,14 +158,21 @@ function doPost(e) {
     ];
 
     if (action === 'edit' && payload.rowIndex) {
-      // อัปเดตข้อมูลแถวเดิม (rowIndex ได้มาจากหน้าเว็บ)
       sheet.getRange(payload.rowIndex, 1, 1, rowData.length).setValues([rowData]);
-    } else {
-      // เพิ่มข้อมูลแถวใหม่ (n = ลำดับสุดท้าย + 1)
+    } else if (action === 'add') {
       const lastRow = sheet.getLastRow();
-      rowData[0] = lastRow; // เซ็ตเลขลำดับ n
+      rowData[0] = lastRow;
       sheet.appendRow(rowData);
     }
+    
+    try {
+      const logsSheet = ss.getSheetByName("Logs");
+      if (logsSheet) {
+        const logAction = (action === 'edit') ? "แก้ไขข้อมูล" : "เพิ่มข้อมูลใหม่";
+        const details = "คลินิก: " + d.name;
+        logsSheet.appendRow([new Date(), payload.username || "Unknown", logAction, details]);
+      }
+    } catch(err) {}
     
     return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
       .setMimeType(ContentService.MimeType.JSON);

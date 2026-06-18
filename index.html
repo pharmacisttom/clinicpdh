@@ -17,6 +17,34 @@
     <button class="btn-add" id="btnShowAddForm">+ เพิ่มคลินิก</button>
   </nav>
 
+  <!-- Login View -->
+  <div id="loginView" class="login-container" style="display: none;">
+    <div class="login-card">
+      <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--primary-color);">เข้าสู่ระบบ</h2>
+      <div class="form-group">
+        <label class="form-label" for="loginUsername">ชื่อผู้ใช้งาน (Username)</label>
+        <input type="text" id="loginUsername" class="form-input" placeholder="กรอก Username">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="loginPassword">รหัสผ่าน (Password)</label>
+        <input type="password" id="loginPassword" class="form-input" placeholder="กรอกรหัสผ่าน">
+      </div>
+      <button type="button" id="btnLogin" class="btn-primary" style="width: 100%;">เข้าสู่ระบบ</button>
+      <div id="loginError" style="color: var(--danger-color); text-align: center; margin-top: 1rem; display: none; font-size: 0.9rem;"></div>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div class="app-container" id="appContainer" style="display: none;">
+    <!-- Header -->
+    <header class="header" style="display: flex; justify-content: space-between; align-items: center; padding-right: 1.5rem;">
+      <div class="header-title">📋 ระบบตรวจคลินิก</div>
+      <div style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; color: white;">
+        <span id="userProfileName"></span>
+        <button id="btnLogout" class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: rgba(255,255,255,0.2); border: none; color: white;">ออก</button>
+      </div>
+    </header>
+
   <main class="container">
     
     <!-- List View -->

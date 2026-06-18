@@ -208,6 +208,30 @@ body {
   gap: 0.5rem;
 }
 
+/* Utilities */
+.hidden {
+  display: none;
+}
+
+/* Login Styles */
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg-color);
+  padding: 1rem;
+}
+
+.login-card {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 400px;
+}
+
 /* Form View (Hidden by default) */
 .form-view {
   display: none;

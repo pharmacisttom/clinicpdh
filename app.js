@@ -20,23 +20,108 @@ const photoInput = document.getElementById('photo');
 const photoPreviewContainer = document.getElementById('photoPreviewContainer');
 const btnClearPhotos = document.getElementById('btnClearPhotos');
 
+// DOM Elements - Login
+const loginView = document.getElementById('loginView');
+const appContainer = document.getElementById('appContainer');
+const loginUsernameInput = document.getElementById('loginUsername');
+const loginPasswordInput = document.getElementById('loginPassword');
+const btnLogin = document.getElementById('btnLogin');
+const loginError = document.getElementById('loginError');
+const userProfileName = document.getElementById('userProfileName');
+const btnLogout = document.getElementById('btnLogout');
+
 // Data State
 let clinicsData = [];
 let photosData = []; // Array to hold new photos
+let currentUser = null;
 
 // Initialize
 function init() {
+  // Check Login State
+  const savedUser = localStorage.getItem('clinic_user');
+  if (savedUser) {
+    currentUser = JSON.parse(savedUser);
+    showApp();
+  } else {
+    showLogin();
+  }
+}
+
+function showLogin() {
+  loginView.style.display = 'flex';
+  appContainer.style.display = 'none';
+  loginUsernameInput.value = '';
+  loginPasswordInput.value = '';
+  loginError.style.display = 'none';
+}
+
+function showApp() {
+  loginView.style.display = 'none';
+  appContainer.style.display = 'block';
+  userProfileName.textContent = `👤 ${currentUser.name} (${currentUser.role})`;
+  fetchClinics();
+}
+
+// Login Event
+btnLogin.addEventListener('click', async () => {
+  const username = loginUsernameInput.value.trim();
+  const password = loginPasswordInput.value.trim();
+  
+  if (!username || !password) {
+    loginError.textContent = 'กรุณากรอก Username และ Password';
+    loginError.style.display = 'block';
+    return;
+  }
+  
+  btnLogin.disabled = true;
+  btnLogin.textContent = 'กำลังตรวจสอบ...';
+  loginError.style.display = 'none';
+  
+  try {
+    const payload = {
+      action: 'login',
+      username: username,
+      password: password
+    };
+    
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    
+    if (result.success) {
+      currentUser = result.user;
+      localStorage.setItem('clinic_user', JSON.stringify(currentUser));
+      showApp();
+    } else {
+      loginError.textContent = result.message || 'รหัสผ่านไม่ถูกต้อง หรือไม่พบผู้ใช้งาน';
+      loginError.style.display = 'block';
+    }
+  } catch (error) {
+    loginError.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+    loginError.style.display = 'block';
+  } finally {
+    btnLogin.disabled = false;
+    btnLogin.textContent = 'เข้าสู่ระบบ';
+  }
+});
+
+// Logout Event
+btnLogout.addEventListener('click', () => {
+  localStorage.removeItem('clinic_user');
+  currentUser = null;
+  showLogin();
+});
+
+// Fetch Data from Google Sheet
+async function fetchClinics() {
   if (!API_URL) {
     showToast('กรุณาตั้งค่า API_URL ในไฟล์ app.js ก่อนใช้งาน', 'error');
     loadingState.style.display = 'none';
     clinicList.innerHTML = '<p style="text-align:center; color:var(--text-light); margin-top:2rem;">ยังไม่ได้เชื่อมต่อฐานข้อมูล Google Sheet</p>';
     return;
   }
-  fetchClinics();
-}
-
-// Fetch Data from Google Sheet
-async function fetchClinics() {
   try {
     loadingState.style.display = 'flex';
     clinicList.innerHTML = '';
@@ -304,9 +389,12 @@ clinicForm.addEventListener('submit', async (e) => {
   
   setLoading(true);
   
+  const rowIndex = document.getElementById('formRowIndex').value;
+  const action = rowIndex ? 'edit' : 'add';
   const payload = {
-    action: document.getElementById('formRowIndex').value ? 'edit' : 'add',
-    rowIndex: document.getElementById('formRowIndex').value,
+    action: action,
+    rowIndex: rowIndex,
+    username: currentUser ? currentUser.username : 'Unknown',
     data: {
       name: document.getElementById('clinicName').value,
       clinicCode: document.getElementById('clinicCode').value,
