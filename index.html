@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Clinic Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <h1>ระบบจัดการคลินิก</h1>
+    <button class="btn-add" id="btnShowAddForm">+ เพิ่มคลินิก</button>
+  </nav>
+
+  <main class="container">
+    
+    <!-- List View -->
+    <div id="listView">
+      <div class="search-container">
+        <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาคลินิก, รหัส หรือชื่อผู้รับอนุญาต...">
+      </div>
+
+      <div id="loadingState" class="loading-state">
+        <div class="spinner-large"></div>
+        <p>กำลังโหลดข้อมูล...</p>
+      </div>
+
+      <div id="clinicList" class="clinic-list">
+        <!-- Clinic cards will be injected here via JS -->
+      </div>
+    </div>
+
+    <!-- Form View -->
+    <div id="formView" class="form-view">
+      <div class="form-header">
+        <button id="btnBack" class="btn-back">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+        </button>
+        <h2 id="formTitle">เพิ่มข้อมูลคลินิกใหม่</h2>
+      </div>
+
+      <form id="clinicForm">
+        <input type="hidden" id="formRowIndex" value="">
+        
+        <div class="form-group">
+          <label class="form-label" for="clinicName">ชื่อคลินิก *</label>
+          <input type="text" id="clinicName" class="form-input" required placeholder="เช่น บุญประทานคลินิกเวชกรรม">
+        </div>
+        
+        <div style="display:flex; gap:1rem;">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="clinicCode">รหัสคลินิก *</label>
+            <input type="text" id="clinicCode" class="form-input" required placeholder="11 หลัก">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="oldClinicCode">รหัสคลินิกเดิม</label>
+            <input type="text" id="oldClinicCode" class="form-input" placeholder="ถ้ามี">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="licensee">ผู้รับอนุญาต</label>
+          <input type="text" id="licensee" class="form-input">
+        </div>
+
+        <div style="display:flex; gap:1rem;">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="operator">ผู้ดำเนินการ</label>
+            <input type="text" id="operator" class="form-input">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="licenseNum">เลขที่ใบประกอบฯ</label>
+            <input type="text" id="licenseNum" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="licenseeCode">รหัสผู้รับอนุญาต</label>
+          <input type="text" id="licenseeCode" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="address">ที่อยู่</label>
+          <textarea id="address" class="form-input" rows="2"></textarea>
+        </div>
+        
+        <div style="display:flex; gap:1rem;">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="subdistrict">ตำบล</label>
+            <input type="text" id="subdistrict" class="form-input">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="district">อำเภอ</label>
+            <input type="text" id="district" class="form-input" value="ปลวกแดง">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="operatingHours">เวลาเปิดทำการ</label>
+          <input type="text" id="operatingHours" class="form-input" placeholder="เช่น ทุกวัน 08.00-20.00 น.">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="phone">เบอร์โทรศัพท์</label>
+          <input type="tel" id="phone" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wasteDisposal">แหล่งกำจัดขยะติดเชื้อ</label>
+          <input type="text" id="wasteDisposal" class="form-input">
+        </div>
+        
+        <div style="display:flex; gap:1rem;">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="expiryDate">ปีที่หมดอายุ</label>
+            <input type="text" id="expiryDate" class="form-input" placeholder="เช่น 2568">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="currentExpiry">วันที่หมดอายุปัจจุบัน</label>
+            <input type="text" id="currentExpiry" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="coordinates">พิกัดคลินิก (Lat, Long)</label>
+          <input type="text" id="coordinates" class="form-input" placeholder="เช่น 13.015, 101.151">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="notes">ข้อเพิ่มเติม / เครื่องมือแพทย์</label>
+          <textarea id="notes" class="form-input" rows="3"></textarea>
+        </div>
+
+        <button type="submit" id="btnSubmit" class="btn-submit">
+          <span id="submitText">บันทึกข้อมูล</span>
+          <div id="submitLoader" class="loader"></div>
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
