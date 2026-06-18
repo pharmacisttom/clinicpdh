@@ -3,13 +3,14 @@
 // จากนั้นกด Deploy -> New deployment -> เลือก Web app -> Access: Anyone -> กด Deploy
 // แล้วนำ Web app URL ที่ได้ไปใส่ในไฟล์ app.js ตัวแปร API_URL
 
-const SHEET_NAME = "Sheet1"; // เปลี่ยนชื่อชีตให้ตรงกับในไฟล์ Google Sheet (อาจจะเป็น 'ชีต1')
+const SPREADSHEET_ID = "18QUAMEGd4_runFgxfT8rXC0wTa205nCdCZ_Ho2bIsg4";
 
 // รับ HTTP GET (สำหรับการดึงข้อมูลคลินิกทั้งหมด)
 function doGet(e) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    if (!sheet) throw new Error("ไม่พบชื่อชีต " + SHEET_NAME);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheets()[0]; // ดึงแท็บแรกสุดเสมอ ไม่ต้องกังวลเรื่องชื่อชีต
+    if (!sheet) throw new Error("ไม่พบแท็บชีต");
     
     const data = sheet.getDataRange().getValues();
     const result = [];
@@ -53,7 +54,8 @@ function doGet(e) {
 // รับ HTTP POST (สำหรับการเพิ่มหรืออัปเดตข้อมูล)
 function doPost(e) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheets()[0];
     const payload = JSON.parse(e.postData.contents);
     const action = payload.action; // 'add' หรือ 'edit'
     const d = payload.data;
