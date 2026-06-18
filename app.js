@@ -15,9 +15,15 @@ const btnSubmit = document.getElementById('btnSubmit');
 const submitText = document.getElementById('submitText');
 const submitLoader = document.getElementById('submitLoader');
 const toast = document.getElementById('toast');
+const btnGPS = document.getElementById('btnGPS');
+const photoInput = document.getElementById('photo');
+const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+const photoPreview = document.getElementById('photoPreview');
 
 // Data State
 let clinicsData = [];
+let photoBase64 = '';
+let photoMimeType = '';
 
 // Initialize
 function init() {
@@ -109,6 +115,10 @@ searchInput.addEventListener('input', (e) => {
 btnShowAddForm.addEventListener('click', () => {
   clinicForm.reset();
   document.getElementById('formRowIndex').value = '';
+  photoBase64 = '';
+  photoMimeType = '';
+  photoPreviewContainer.style.display = 'none';
+  photoPreview.src = '';
   formTitle.textContent = 'เพิ่มข้อมูลคลินิกใหม่';
   toggleView('form');
 });
@@ -149,9 +159,103 @@ function openEditForm(clinic, index) {
   document.getElementById('coordinates').value = clinic.coordinates || '';
   document.getElementById('notes').value = clinic.notes || '';
   
+  photoBase64 = '';
+  photoMimeType = '';
+  photoInput.value = '';
+  
+  // Show existing photo if any
+  if (clinic.photoUrl) {
+    photoPreviewContainer.style.display = 'block';
+    photoPreview.src = clinic.photoUrl;
+  } else {
+    photoPreviewContainer.style.display = 'none';
+    photoPreview.src = '';
+  }
+  
   formTitle.textContent = 'แก้ไขข้อมูลคลินิก';
   toggleView('form');
 }
+
+// GPS Feature
+btnGPS.addEventListener('click', () => {
+  if (!navigator.geolocation) {
+    showToast('เบราว์เซอร์ของคุณไม่รองรับ GPS', 'error');
+    return;
+  }
+  btnGPS.disabled = true;
+  btnGPS.innerHTML = '<div class="loader" style="display:block; width:16px; height:16px; border-width:2px; margin-right:4px;"></div> กำลังดึง...';
+  
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude.toFixed(6);
+      const lng = position.coords.longitude.toFixed(6);
+      document.getElementById('coordinates').value = `${lat}, ${lng}`;
+      showToast('ดึงพิกัดสำเร็จ', 'success');
+      resetGPSButton();
+    },
+    (error) => {
+      console.error(error);
+      showToast('ไม่สามารถดึงพิกัดได้ กรุณาเปิด GPS', 'error');
+      resetGPSButton();
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+});
+
+function resetGPSButton() {
+  btnGPS.disabled = false;
+  btnGPS.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> ดึงพิกัด';
+}
+
+// Photo Upload Feature (Resize to Base64)
+photoInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) {
+    photoBase64 = '';
+    photoMimeType = '';
+    photoPreviewContainer.style.display = 'none';
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 800;
+      const MAX_HEIGHT = 800;
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      
+      photoMimeType = 'image/jpeg';
+      photoBase64 = dataUrl.split(',')[1]; // Get only base64 data without prefix
+      
+      photoPreviewContainer.style.display = 'block';
+      photoPreview.src = dataUrl;
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+});
 
 // Form Submission
 clinicForm.addEventListener('submit', async (e) => {
@@ -185,6 +289,10 @@ clinicForm.addEventListener('submit', async (e) => {
       currentExpiry: document.getElementById('currentExpiry').value,
       coordinates: document.getElementById('coordinates').value,
       notes: document.getElementById('notes').value
+    },
+    photo: {
+      data: photoBase64,
+      mimeType: photoMimeType
     }
   };
 

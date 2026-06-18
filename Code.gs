@@ -38,7 +38,8 @@ function doGet(e) {
         currentExpiry: row[15],
         notes: row[16],
         equipment: row[17],
-        coordinates: row[18]
+        coordinates: row[18],
+        photoUrl: row[19] || ""
       });
     }
     
@@ -60,6 +61,29 @@ function doPost(e) {
     const action = payload.action; // 'add' หรือ 'edit'
     const d = payload.data;
     
+    let photoUrl = "";
+    
+    // ถ้าเป็นการแก้ไขและไม่มีรูปใหม่ ให้ดึงรูปเดิมมา
+    if (action === 'edit' && payload.rowIndex && (!payload.photo || !payload.photo.data)) {
+       photoUrl = sheet.getRange(payload.rowIndex, 20).getValue();
+    }
+
+    if (payload.photo && payload.photo.data) {
+      const folderName = "Clinic_Photos";
+      const folders = DriveApp.getFoldersByName(folderName);
+      let folder;
+      if (folders.hasNext()) {
+        folder = folders.next();
+      } else {
+        folder = DriveApp.createFolder(folderName);
+      }
+      
+      const blob = Utilities.newBlob(Utilities.base64Decode(payload.photo.data), payload.photo.mimeType, "Clinic_" + new Date().getTime() + ".jpg");
+      const file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      photoUrl = file.getUrl();
+    }
+    
     // สร้าง Array ข้อมูลสำหรับ 1 แถว (เรียงตามคอลัมน์ใน Sheet)
     const rowData = [
       "", // n (ควรจะมีระบบรันเลข หรือเว้นไว้)
@@ -80,7 +104,8 @@ function doPost(e) {
       d.currentExpiry,
       d.notes,
       d.equipment || "",
-      d.coordinates
+      d.coordinates,
+      photoUrl
     ];
 
     if (action === 'edit' && payload.rowIndex) {

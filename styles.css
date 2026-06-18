@@ -81,6 +81,27 @@ body {
   box-shadow: 0 6px 8px -1px rgba(79, 70, 229, 0.4);
 }
 
+.btn-secondary {
+  background: var(--bg-gradient-end);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-secondary:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+}
+
 /* Container */
 .container {
   flex: 1;
