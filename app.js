@@ -1,5 +1,5 @@
 // Google Apps Script Web App URL (จะต้องนำ URL มาใส่ตรงนี้หลังจาก Deploy)
-const API_URL = 'https://script.google.com/macros/s/AKfycbw4mlZRH6JqNmLoT3oAlncp3uTUQX2Gkl9oXStl21Tfh_2MiIOIOYwMiPYkrE-5-8fR/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwBvoK6cOloY2M_CBa_bwqg7XPYtXh-EV1zCQ7nB40ImsLxgRsZ9AEkS35DY58p4LQd/exec';
 
 // DOM Elements
 const listView = document.getElementById('listView');
