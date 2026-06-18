@@ -95,7 +95,7 @@ function renderClinics(data) {
         </div>
         <div class="detail-row">
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--primary-color)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-          <span style="${clinic.photoUrl ? 'color:var(--primary-color); font-weight:600;' : ''}">${clinic.photoUrl ? `📸 มีรูปภาพ (${clinic.photoUrl.split(',').length} รูป)` : 'ยังไม่มีรูปภาพ'}</span>
+          <span style="${clinic.photoUrl ? 'color:var(--primary-color); font-weight:600;' : ''}">${clinic.photoUrl ? `📸 มีรูปภาพ (${String(clinic.photoUrl).split(',').length} รูป)` : 'ยังไม่มีรูปภาพ'}</span>
         </div>
       </div>
     `;
@@ -170,7 +170,7 @@ function openEditForm(clinic, index) {
   // Show existing photos if any
   if (clinic.photoUrl) {
     photoPreviewContainer.style.display = 'flex';
-    const urls = clinic.photoUrl.split(',').map(u => u.trim()).filter(u => u);
+    const urls = String(clinic.photoUrl).split(',').map(u => u.trim()).filter(u => u);
     urls.forEach(url => {
       const img = document.createElement('img');
       img.src = url;
@@ -278,7 +278,7 @@ btnClearPhotos.addEventListener('click', () => {
     const clinic = clinicsData[rowIndex - 2];
     if (clinic && clinic.photoUrl) {
       photoPreviewContainer.style.display = 'flex';
-      const urls = clinic.photoUrl.split(',').map(u => u.trim()).filter(u => u);
+      const urls = String(clinic.photoUrl).split(',').map(u => u.trim()).filter(u => u);
       urls.forEach(url => {
         const img = document.createElement('img');
         img.src = url;
