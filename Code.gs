@@ -75,6 +75,7 @@ function doPost(e) {
           
           return ContentService.createTextOutput(JSON.stringify({
             success: true,
+            status: 'success',
             user: { username: row[0], role: row[2], name: row[3] }
           })).setMimeType(ContentService.MimeType.JSON);
         }
