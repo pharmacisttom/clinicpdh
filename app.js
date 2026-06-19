@@ -93,7 +93,7 @@ btnLogin.addEventListener('click', async () => {
     });
     const result = await response.json();
     
-    if (result.status === 'success') {
+    if (result.status === 'success' || result.success === true) {
       currentUser = result.user;
       localStorage.setItem('clinic_user', JSON.stringify(currentUser));
       showApp();
