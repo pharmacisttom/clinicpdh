@@ -92,6 +92,7 @@ btnLogin.addEventListener('click', async () => {
       body: JSON.stringify(payload)
     });
     const result = await response.json();
+    alert("DEBUG RESULT: " + JSON.stringify(result));
     
     if (result.status === 'success' || result.success === true) {
       currentUser = result.user;
