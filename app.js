@@ -217,28 +217,31 @@ function renderClinics(dataToRender) {
     let photoCount = 0;
     if (hasPhotos) photoCount = String(photoStr).split(',').length;
     
-    const gpsHtml = hasGps ? `<span class="badge bg-success-subtle text-success rounded-pill px-2 py-1">📍 มีพิกัด</span>` : `<span class="badge bg-light text-secondary rounded-pill border px-2 py-1">📍 ไม่มีพิกัด</span>`;
-    const photoHtml = hasPhotos ? `<span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1">📸 รูป (${photoCount})</span>` : `<span class="badge bg-light text-secondary rounded-pill border px-2 py-1">📸 ไม่มีรูป</span>`;
+    const gpsHtml = hasGps ? `<span class="badge badge-custom bg-success-subtle text-success">📍 มีพิกัด</span>` : `<span class="badge badge-custom bg-light text-secondary border">📍 ไม่มีพิกัด</span>`;
+    const photoHtml = hasPhotos ? `<span class="badge badge-custom bg-primary-subtle text-primary">📸 รูป (${photoCount})</span>` : `<span class="badge badge-custom bg-light text-secondary border">📸 ไม่มีรูป</span>`;
 
     card.innerHTML = `
       <div class="card-body d-flex flex-column position-relative">
-        <h5 class="card-title text-primary fw-bold mb-3 pe-4">
-          <span style="font-size: 1.1em; margin-right: 4px;">📑</span>${title}
-        </h5>
-        
-        <div class="card-text text-secondary small mb-4 flex-grow-1" style="line-height: 1.6;">
-          ${sub1 ? `<div class="mb-2"><span style="opacity: 0.7;">🔹</span> <strong class="text-dark">${sub1Field}:</strong> ${clinic[sub1Field]}</div>` : ''}
-          ${sub2 ? `<div><span style="opacity: 0.7;">🔸</span> <strong class="text-dark">${sub2Field}:</strong> ${clinic[sub2Field]}</div>` : ''}
+        <div class="d-flex align-items-center mb-3 pe-4">
+          <div class="card-icon-wrapper me-3">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          </div>
+          <h5 class="card-title text-primary fw-bold mb-0" style="line-height: 1.3;">${title}</h5>
         </div>
         
-        <div class="d-flex gap-2 mt-auto pt-3 border-top border-light">
+        <div class="card-text text-secondary small mb-4 flex-grow-1" style="line-height: 1.6;">
+          ${sub1 ? `<div class="mb-2 text-dark"><span class="text-primary opacity-75 me-2">🔹</span><strong class="me-1">${sub1Field}:</strong><span class="text-muted">${clinic[sub1Field]}</span></div>` : ''}
+          ${sub2 ? `<div class="text-dark"><span class="text-warning opacity-75 me-2">🔸</span><strong class="me-1">${sub2Field}:</strong><span class="text-muted">${clinic[sub2Field]}</span></div>` : ''}
+        </div>
+        
+        <div class="d-flex gap-2 mt-auto pt-3 border-top" style="border-color: rgba(0,0,0,0.05) !important;">
           ${gpsHtml}
           ${photoHtml}
         </div>
         
         <!-- Hover indicator icon -->
-        <div class="position-absolute text-primary" style="right: 1.2rem; top: 1.5rem; opacity: 0.2;">
-           <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        <div class="position-absolute text-primary" style="right: 1.2rem; top: 1.5rem; opacity: 0.15; transition: all 0.3s;">
+           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
         </div>
       </div>
     `;
@@ -325,30 +328,38 @@ function generateDynamicForm(data = null) {
     }
     
     const div = document.createElement('div');
-    div.className = 'form-group';
+    div.className = 'col-12 col-md-6'; // Grid layout
     
-    const label = document.createElement('label');
-    label.className = 'form-label';
-    label.textContent = h;
-    div.appendChild(label);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'form-floating mb-1 shadow-sm rounded-3';
     
     // Check if it should be textarea
     if (hLower.includes('หมายเหตุ') || hLower.includes('ที่อยู่') || hLower.includes('รายละเอียด') || hLower.includes('ข้อมูลเพิ่มเติม')) {
       const textarea = document.createElement('textarea');
-      textarea.className = 'form-input';
+      textarea.className = 'form-control border-0';
       textarea.id = 'dynamic_' + h;
-      textarea.rows = 2;
+      textarea.placeholder = h;
+      textarea.style.height = '100px';
       if (data && data[h]) textarea.value = data[h];
-      div.appendChild(textarea);
+      wrapper.appendChild(textarea);
+      div.className = 'col-12'; // Make textarea full width
     } else {
       const input = document.createElement('input');
       input.type = hLower.includes('เบอร์') || hLower.includes('โทร') || hLower.includes('phone') ? 'tel' : 'text';
-      input.className = 'form-input';
+      input.className = 'form-control border-0';
       input.id = 'dynamic_' + h;
+      input.placeholder = h;
       if (data && data[h]) input.value = data[h];
-      div.appendChild(input);
+      wrapper.appendChild(input);
     }
     
+    const label = document.createElement('label');
+    label.setAttribute('for', 'dynamic_' + h);
+    label.className = 'text-muted fw-semibold';
+    label.textContent = h;
+    wrapper.appendChild(label);
+    
+    div.appendChild(wrapper);
     container.appendChild(div);
   });
   
